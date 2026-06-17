@@ -42,7 +42,7 @@
         }
       })();
     </script>
-    <link href="style.css?v=66" rel="stylesheet" />
+    <link href="style.css?v=67" rel="stylesheet" />
   </head>
   <body class="antialiased">
     <header class="app-header">
@@ -107,26 +107,7 @@
               <i class="bi bi-people"></i>
               حسابات
             </button>
-            <button
-              class="btn btn-outline-secondary"
-              id="exportCsvBtn"
-              type="button"
-              title="تصدير Excel"
-              aria-label="تصدير Excel"
-            >
-              <i class="bi bi-file-earmark-spreadsheet"></i>
-              Excel
-            </button>
-            <button
-              class="btn btn-primary"
-              id="generatePdfBtn"
-              aria-label="تصدير PDF"
-              type="button"
-              title="تصدير جميع السجلات في PDF واحد"
-            >
-              <i class="bi bi-file-earmark-pdf"></i>
-              PDF
-            </button>
+            <!-- header export button removed; CSV export is available in the records panel -->
           </div>
         </div>
       </div>
@@ -259,6 +240,28 @@
                   <span id="recordCount">0</span> أسرة في قاعدة البيانات.
                 </p>
               </div>
+              <div
+                class="records-header-actions d-flex align-items-center gap-2"
+              >
+                <button
+                  id="recordsCsvBtn"
+                  class="btn btn-outline-secondary btn-sm"
+                  type="button"
+                  title="تصدير Excel"
+                >
+                  <i class="bi bi-file-earmark-spreadsheet"></i>
+                  Excel
+                </button>
+                <button
+                  id="recordsPdfBtn"
+                  class="btn btn-outline-secondary btn-sm"
+                  type="button"
+                  title="تصدير PDF"
+                >
+                  <i class="bi bi-file-earmark-pdf"></i>
+                  PDF
+                </button>
+              </div>
             </div>
 
             <div class="input-group mb-3">
@@ -271,7 +274,7 @@
               />
             </div>
 
-            <div class="d-flex gap-2 mb-3 align-items-center">
+            <div class="filters-row d-flex gap-2 mb-3 align-items-center">
               <select
                 id="filterLevel"
                 class="form-select form-select-sm"
@@ -296,11 +299,11 @@
               </select>
 
               <select
-                id="filterSchool"
+                id="filterAge"
                 class="form-select form-select-sm"
-                aria-label="فلتر المدرسة"
+                aria-label="فلتر السن"
               >
-                <option value="">كل المدارس</option>
+                <option value="">كل الأعمار</option>
               </select>
 
               <select
@@ -619,6 +622,6 @@
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ar.js"></script>
-    <script src="script.js?v=72"></script>
+    <script src="script.js?v=75"></script>
   </body>
 </html>

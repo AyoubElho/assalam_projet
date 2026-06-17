@@ -27,7 +27,7 @@ const state = {
   accounts: [],
   filters: {
     level: "",
-    school: "",
+    age: "",
     support: "",
   },
 };
@@ -46,6 +46,8 @@ const elements = {
   saveNewBtn: document.getElementById("saveNewBtn"),
   newFormBtn: document.getElementById("newFormBtn"),
   generatePdfBtn: document.getElementById("generatePdfBtn"),
+  recordsPdfBtn: document.getElementById("recordsPdfBtn"),
+  recordsCsvBtn: document.getElementById("recordsCsvBtn"),
   exportCsvBtn: document.getElementById("exportCsvBtn"),
   themeToggleBtn: document.getElementById("themeToggleBtn"),
   logoutBtn: document.getElementById("logoutBtn"),
@@ -82,7 +84,7 @@ const elements = {
   recordCount: document.getElementById("recordCount"),
   searchInput: document.getElementById("searchInput"),
   filterLevel: document.getElementById("filterLevel"),
-  filterSchool: document.getElementById("filterSchool"),
+  filterAge: document.getElementById("filterAge"),
   filterSupport: document.getElementById("filterSupport"),
   clearFiltersBtn: document.getElementById("clearFiltersBtn"),
   formModeBadge: document.getElementById("formModeBadge"),
@@ -771,6 +773,7 @@ async function refreshRecords() {
     String(b.updatedAt || "").localeCompare(String(a.updatedAt || "")),
   );
   renderSchoolOptions();
+  renderAgeOptions();
   renderRecords();
 }
 
@@ -861,59 +864,41 @@ function renderSchoolOptions() {
       option.value = school;
       elements.schoolOptions.appendChild(option);
     });
-
-  // Also populate the filter select for schools if present
-  if (elements.filterSchool) {
-    const select = elements.filterSchool;
-    const current = select.value || "";
-    select.innerHTML = "";
-    const allOpt = document.createElement("option");
-    allOpt.value = "";
-    allOpt.textContent = "كل المدارس";
-    select.appendChild(allOpt);
-    [...schools]
-      .sort((a, b) => a.localeCompare(b, "ar"))
-      .forEach((school) => {
-        const opt = document.createElement("option");
-        opt.value = school;
-        opt.textContent = school;
-        select.appendChild(opt);
-      });
-    if (current) select.value = current;
-  }
-  // Ensure filter dropdown reflects available datalist entries
-  syncSchoolFromDatalist();
 }
 
-function syncSchoolFromDatalist() {
-  const datalist = elements.schoolOptions;
-  const select = elements.filterSchool;
-  if (!datalist || !select) return;
+function renderAgeOptions() {
+  const select = elements.filterAge;
+  if (!select) return;
 
-  const options = [...datalist.querySelectorAll("option")]
-    .map((o) => String(o.value || "").trim())
-    .filter(Boolean);
-
-  const unique = Array.from(new Set(options)).sort((a, b) =>
-    a.localeCompare(b, "ar"),
-  );
-
-  // Rebuild select keeping the first "all" option
   const current = select.value || "";
+  const ages = new Set();
+  state.records.forEach((record) => {
+    record.children.forEach((child) => {
+      const age = calculateAgeFromBirthDate(child.birthDate);
+      if (age) ages.add(age);
+    });
+  });
+
   select.innerHTML = "";
   const allOpt = document.createElement("option");
   allOpt.value = "";
-  allOpt.textContent = "كل المدارس";
+  allOpt.textContent = "كل الأعمار";
   select.appendChild(allOpt);
 
-  unique.forEach((school) => {
-    const opt = document.createElement("option");
-    opt.value = school;
-    opt.textContent = school;
-    select.appendChild(opt);
-  });
+  [...ages]
+    .sort((a, b) => Number(a) - Number(b))
+    .forEach((age) => {
+      const opt = document.createElement("option");
+      opt.value = age;
+      opt.textContent = age;
+      select.appendChild(opt);
+    });
 
-  if (current) select.value = current;
+  if (current && ages.has(current)) {
+    select.value = current;
+  } else if (current) {
+    state.filters.age = "";
+  }
 }
 
 function recordMatches(record) {
@@ -947,14 +932,15 @@ function recordMatches(record) {
     ...record.children.flatMap((child) => [
       child.name,
       child.birthDate,
+      calculateAgeFromBirthDate(child.birthDate),
       child.level,
       getChildSchool(child, record),
     ]),
   ];
 
-  // Apply field filters (level, school, support)
+  // Apply field filters (level, age, support)
   try {
-    const { level, school, support } = state.filters || {};
+    const { level, age, support } = state.filters || {};
     if (level) {
       const levelMatched = record.children.some((child) =>
         normalizeStudyLevel(child.level)
@@ -964,17 +950,11 @@ function recordMatches(record) {
       if (!levelMatched) return false;
     }
 
-    if (school) {
-      const schoolMatched =
-        record.children.some((child) =>
-          String(getChildSchool(child, record) || "")
-            .toLowerCase()
-            .includes(String(school || "").toLowerCase()),
-        ) ||
-        String(record.notes || "")
-          .toLowerCase()
-          .includes(String(school || "").toLowerCase());
-      if (!schoolMatched) return false;
+    if (age) {
+      const ageMatched = record.children.some(
+        (child) => calculateAgeFromBirthDate(child.birthDate) === String(age),
+      );
+      if (!ageMatched) return false;
     }
 
     if (support) {
@@ -1032,8 +1012,48 @@ function filterPdfChildrenByLevelSearch(records, query) {
     .filter((record) => record.children.length > 0);
 }
 
+function hasActiveChildDropdownFilters() {
+  return Boolean(state.filters?.level || state.filters?.age);
+}
+
+function childMatchesActiveDropdownFilters(child, record) {
+  const { level, age } = state.filters || {};
+
+  if (
+    level &&
+    !normalizeStudyLevel(child.level)
+      .toLowerCase()
+      .includes(normalizeStudyLevel(level).toLowerCase())
+  ) {
+    return false;
+  }
+
+  if (age && calculateAgeFromBirthDate(child.birthDate) !== String(age)) {
+    return false;
+  }
+
+  return true;
+}
+
+function applyChildDropdownFilters(record) {
+  if (!hasActiveChildDropdownFilters()) return record;
+
+  return {
+    ...record,
+    children: record.children.filter((child) =>
+      childMatchesActiveDropdownFilters(child, record),
+    ),
+  };
+}
+
 function currentSearchRecords() {
-  return state.records.filter(recordMatches);
+  return state.records
+    .filter(recordMatches)
+    .map(applyChildDropdownFilters)
+    .filter(
+      (record) =>
+        !hasActiveChildDropdownFilters() || record.children.length > 0,
+    );
 }
 
 function renderRecords() {
@@ -1495,7 +1515,7 @@ function buildPdfSheet(rows, options = {}, pageNumber = 1, totalPages = 1) {
           <th>الهاتف</th>
           <th>العنوان</th>
           <th>الأبناء</th>
-          <th>السن</th>
+          <th>سن</th>
           <th>المستوى الدراسي</th>
           <th>المدرسة</th>
         </tr>
@@ -1575,7 +1595,8 @@ function safeFileName(value) {
 }
 
 function exportCsv() {
-  if (!state.records.length) {
+  const records = currentSearchRecords();
+  if (!records.length) {
     showToast("لا توجد بيانات لتصديرها.", "warning");
     return;
   }
@@ -1592,7 +1613,7 @@ function exportCsv() {
     "المدرسة",
     "تاريخ الحفظ",
   ];
-  const rows = sortRecordsByNumber(state.records).flatMap((record) => {
+  const rows = sortRecordsByNumber(records).flatMap((record) => {
     if (!record.children.length) {
       return [
         [
@@ -1726,12 +1747,17 @@ function bindEvents() {
 
   elements.newFormBtn.addEventListener("click", resetForm);
 
-  elements.generatePdfBtn.addEventListener("click", async () => {
+  elements.generatePdfBtn?.addEventListener("click", async () => {
     const records = await getRecordsForFullPdf();
     await generateAllRecordsPdf(records);
   });
+  elements.recordsPdfBtn?.addEventListener("click", async () => {
+    const records = await getRecordsForFullPdf();
+    await generateAllRecordsPdf(records);
+  });
+  elements.recordsCsvBtn?.addEventListener("click", exportCsv);
 
-  elements.exportCsvBtn.addEventListener("click", exportCsv);
+  elements.exportCsvBtn?.addEventListener("click", exportCsv);
 
   elements.searchInput.addEventListener("input", (event) => {
     state.search = event.target.value;
@@ -1746,8 +1772,8 @@ function bindEvents() {
     renderRecords();
   });
 
-  elements.filterSchool?.addEventListener("change", (event) => {
-    state.filters.school = event.target.value || "";
+  elements.filterAge?.addEventListener("change", (event) => {
+    state.filters.age = event.target.value || "";
     state.page = 1;
     renderRecords();
   });
@@ -1759,9 +1785,9 @@ function bindEvents() {
   });
 
   elements.clearFiltersBtn?.addEventListener("click", () => {
-    state.filters = { level: "", school: "", support: "" };
+    state.filters = { level: "", age: "", support: "" };
     if (elements.filterLevel) elements.filterLevel.value = "";
-    if (elements.filterSchool) elements.filterSchool.value = "";
+    if (elements.filterAge) elements.filterAge.value = "";
     if (elements.filterSupport) elements.filterSupport.value = "";
     state.page = 1;
     renderRecords();
@@ -1789,6 +1815,9 @@ function bindEvents() {
     if (!button || !item) return;
 
     const record = state.records.find((entry) => entry.id === item.dataset.id);
+    const visibleRecord = currentSearchRecords().find(
+      (entry) => entry.id === item.dataset.id,
+    );
     if (!record) return;
 
     const action = button.dataset.action;
@@ -1797,7 +1826,7 @@ function bindEvents() {
     }
 
     if (action === "pdf") {
-      await generatePdf(record);
+      await generatePdf(visibleRecord || record);
     }
 
     if (action === "delete") {

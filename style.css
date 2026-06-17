@@ -90,7 +90,13 @@ body::before {
   inset: 0 0 auto 0;
   z-index: 60;
   height: 5px;
-  background: linear-gradient(90deg, var(--brand) 0%, var(--brand) 38%, var(--accent) 55%, var(--success) 100%);
+  background: linear-gradient(
+    90deg,
+    var(--brand) 0%,
+    var(--brand) 38%,
+    var(--accent) 55%,
+    var(--success) 100%
+  );
 }
 
 ::selection {
@@ -111,9 +117,15 @@ body::before {
   border-bottom: 1px solid var(--line);
   background: var(--panel);
   background-image:
-    radial-gradient(620px 180px at 12% -40%, rgba(53, 82, 217, 0.10), transparent),
+    radial-gradient(
+      620px 180px at 12% -40%,
+      rgba(53, 82, 217, 0.1),
+      transparent
+    ),
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='84' height='84' viewBox='0 0 84 84'%3E%3Cg fill='none' stroke='%233552d9' stroke-opacity='0.05' stroke-width='1.6'%3E%3Crect x='17' y='17' width='50' height='50'/%3E%3Crect x='17' y='17' width='50' height='50' transform='rotate(45 42 42)'/%3E%3C/g%3E%3C/svg%3E");
-  background-size: auto, 84px 84px;
+  background-size:
+    auto,
+    84px 84px;
 }
 
 .app-header .container {
@@ -175,7 +187,18 @@ body::before {
   width: 9px;
   height: 9px;
   background: var(--accent);
-  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+  clip-path: polygon(
+    50% 0%,
+    61% 35%,
+    98% 35%,
+    68% 57%,
+    79% 91%,
+    50% 70%,
+    21% 91%,
+    32% 57%,
+    2% 35%,
+    39% 35%
+  );
 }
 
 .app-header h1,
@@ -254,7 +277,18 @@ body::before {
   margin-inline-end: 0.5rem;
   vertical-align: -1px;
   background: var(--brand);
-  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+  clip-path: polygon(
+    50% 0%,
+    61% 35%,
+    98% 35%,
+    68% 57%,
+    79% 91%,
+    50% 70%,
+    21% 91%,
+    32% 57%,
+    2% 35%,
+    39% 35%
+  );
 }
 
 .badge {
@@ -508,13 +542,9 @@ body::before {
 }
 
 #exportCsvBtn {
-  order: -8;
+  /* removed from header; kept for compatibility if reintroduced */
+  display: none;
 }
-
-#generatePdfBtn {
-  order: -4;
-}
-
 #logoutBtn {
   order: 0;
 }
@@ -528,8 +558,11 @@ body::before {
   border-radius: 50%;
   color: #ffffff;
   font-weight: 800;
-  background:
-    linear-gradient(135deg, rgba(53, 82, 217, 0.92), rgba(31, 171, 92, 0.92));
+  background: linear-gradient(
+    135deg,
+    rgba(53, 82, 217, 0.92),
+    rgba(31, 171, 92, 0.92)
+  );
   background-position: center;
   background-size: cover;
 }
@@ -719,6 +752,31 @@ body::before {
   overflow: hidden;
 }
 
+/* Filter bar: keep dropdowns and button on one line */
+.records-panel .filters-row {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: flex-start;
+  overflow-x: auto;
+}
+
+/* Selects: shrink to fit with flex */
+.records-panel .filters-row .form-select {
+  flex: 1 1 auto;
+  min-width: 7.5rem;
+  max-width: 16rem;
+}
+
+/* Buttons: compact and inline */
+.records-panel .filters-row .btn {
+  flex: 0 0 auto;
+  min-width: 4rem;
+  padding-inline: 0.6rem;
+  white-space: nowrap;
+}
+
 .records-panel .input-group .input-group-text {
   border-left: 0;
   border-radius: 0;
@@ -891,7 +949,11 @@ body::before {
 
 :root[data-theme="dark"] body {
   background:
-    radial-gradient(720px 220px at 12% -30%, rgba(142, 162, 255, 0.16), transparent),
+    radial-gradient(
+      720px 220px at 12% -30%,
+      rgba(142, 162, 255, 0.16),
+      transparent
+    ),
     linear-gradient(180deg, #111a2d 0%, var(--bg) 34rem);
 }
 
@@ -904,7 +966,11 @@ body::before {
 
 :root[data-theme="dark"] .app-header {
   background-image:
-    radial-gradient(620px 180px at 12% -40%, rgba(142, 162, 255, 0.14), transparent),
+    radial-gradient(
+      620px 180px at 12% -40%,
+      rgba(142, 162, 255, 0.14),
+      transparent
+    ),
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='84' height='84' viewBox='0 0 84 84'%3E%3Cg fill='none' stroke='%238ea2ff' stroke-opacity='0.08' stroke-width='1.6'%3E%3Crect x='17' y='17' width='50' height='50'/%3E%3Crect x='17' y='17' width='50' height='50' transform='rotate(45 42 42)'/%3E%3C/g%3E%3C/svg%3E");
 }
 
@@ -940,7 +1006,8 @@ body::before {
   background: var(--brand);
 }
 
-:root[data-theme="dark"] .form-control[type="file"]::file-selector-button:hover {
+:root[data-theme="dark"]
+  .form-control[type="file"]::file-selector-button:hover {
   background: var(--brand-dark);
 }
 
@@ -1094,7 +1161,12 @@ body::before {
   inset: 0 0 auto 0;
   height: 4px;
   border-radius: var(--radius) var(--radius) 0 0;
-  background: linear-gradient(90deg, var(--brand), var(--accent), var(--success));
+  background: linear-gradient(
+    90deg,
+    var(--brand),
+    var(--accent),
+    var(--success)
+  );
 }
 
 .login-logo-wrap {
@@ -1260,6 +1332,10 @@ body::before {
 
 .pdf-capture-sheet th:nth-child(7) {
   width: 7%;
+  text-align: center;
+  white-space: nowrap;
+  word-break: normal;
+  overflow-wrap: normal;
 }
 
 .pdf-capture-sheet th:nth-child(8) {
@@ -1308,6 +1384,8 @@ body::before {
 .pdf-capture-sheet .age-cell {
   text-align: center;
   white-space: nowrap;
+  word-break: normal;
+  overflow-wrap: normal;
 }
 
 .continued-label {
