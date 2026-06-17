@@ -894,7 +894,9 @@ function syncSchoolFromDatalist() {
     .map((o) => String(o.value || "").trim())
     .filter(Boolean);
 
-  const unique = Array.from(new Set(options)).sort((a, b) => a.localeCompare(b, "ar"));
+  const unique = Array.from(new Set(options)).sort((a, b) =>
+    a.localeCompare(b, "ar"),
+  );
 
   // Rebuild select keeping the first "all" option
   const current = select.value || "";
