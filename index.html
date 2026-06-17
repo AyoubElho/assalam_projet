@@ -42,7 +42,7 @@
         }
       })();
     </script>
-    <link href="style.css?v=67" rel="stylesheet" />
+    <link href="style.css?v=71" rel="stylesheet" />
   </head>
   <body class="antialiased">
     <header class="app-header">
@@ -274,7 +274,7 @@
               />
             </div>
 
-            <div class="filters-row d-flex gap-2 mb-3 align-items-center">
+            <div class="filters-row mb-3">
               <select
                 id="filterLevel"
                 class="form-select form-select-sm"
@@ -298,13 +298,34 @@
                 <option value="غير متمدرس">غير متمدرس</option>
               </select>
 
-              <select
-                id="filterAge"
-                class="form-select form-select-sm"
-                aria-label="فلتر السن"
-              >
-                <option value="">كل الأعمار</option>
-              </select>
+              <div class="filter-group" aria-label="فلتر السن">
+                <span class="filter-icon" title="فلتر السن">
+                  <i class="bi bi-calendar3"></i>
+                </span>
+                <select
+                  id="filterAgeOperator"
+                  class="form-select form-select-sm filter-operator"
+                  aria-label="طريقة فلتر السن"
+                >
+                  <option value="eq">يساوي</option>
+                  <option value="gt">أكبر من</option>
+                  <option value="gte">أكبر أو يساوي</option>
+                  <option value="lt">أقل من</option>
+                  <option value="lte">أقل أو يساوي</option>
+                </select>
+                <input
+                  id="filterAge"
+                  class="form-control form-control-sm filter-number"
+                  type="number"
+                  min="0"
+                  step="1"
+                  inputmode="numeric"
+                  placeholder="السن"
+                  list="ageOptions"
+                  aria-label="قيمة السن"
+                />
+                <datalist id="ageOptions"></datalist>
+              </div>
 
               <select
                 id="filterSupport"
@@ -316,13 +337,41 @@
                 <option value="unsupported">غير مدعومة</option>
               </select>
 
+              <div class="filter-group" aria-label="فلتر عدد الأبناء">
+                <span class="filter-icon" title="فلتر عدد الأبناء">
+                  <i class="bi bi-people"></i>
+                </span>
+                <select
+                  id="filterChildCountOperator"
+                  class="form-select form-select-sm filter-operator"
+                  aria-label="طريقة فلتر عدد الأبناء"
+                >
+                  <option value="eq">يساوي</option>
+                  <option value="gt">أكبر من</option>
+                  <option value="gte">أكبر أو يساوي</option>
+                  <option value="lt">أقل من</option>
+                  <option value="lte">أقل أو يساوي</option>
+                </select>
+                <input
+                  id="filterChildCount"
+                  class="form-control form-control-sm filter-number"
+                  type="number"
+                  min="0"
+                  step="1"
+                  inputmode="numeric"
+                  placeholder="عدد الأبناء"
+                  aria-label="عدد الأبناء"
+                />
+              </div>
+
               <button
                 id="clearFiltersBtn"
-                class="btn btn-outline-secondary btn-sm"
+                class="btn clear-filters-btn btn-sm"
                 type="button"
                 title="مسح الفلاتر"
               >
-                مسح
+                <i class="bi bi-arrow-counterclockwise"></i>
+                <span>مسح الفلاتر</span>
               </button>
             </div>
 
@@ -622,6 +671,6 @@
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ar.js"></script>
-    <script src="script.js?v=75"></script>
+    <script src="script.js?v=78"></script>
   </body>
 </html>

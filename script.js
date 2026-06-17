@@ -27,8 +27,11 @@ const state = {
   accounts: [],
   filters: {
     level: "",
+    ageOperator: "eq",
     age: "",
     support: "",
+    childCountOperator: "eq",
+    childCount: "",
   },
 };
 
@@ -84,8 +87,12 @@ const elements = {
   recordCount: document.getElementById("recordCount"),
   searchInput: document.getElementById("searchInput"),
   filterLevel: document.getElementById("filterLevel"),
+  filterAgeOperator: document.getElementById("filterAgeOperator"),
   filterAge: document.getElementById("filterAge"),
   filterSupport: document.getElementById("filterSupport"),
+  filterChildCountOperator: document.getElementById("filterChildCountOperator"),
+  filterChildCount: document.getElementById("filterChildCount"),
+  ageOptions: document.getElementById("ageOptions"),
   clearFiltersBtn: document.getElementById("clearFiltersBtn"),
   formModeBadge: document.getElementById("formModeBadge"),
   toast: document.getElementById("appToast"),
@@ -867,10 +874,9 @@ function renderSchoolOptions() {
 }
 
 function renderAgeOptions() {
-  const select = elements.filterAge;
-  if (!select) return;
+  const list = elements.ageOptions;
+  if (!list) return;
 
-  const current = select.value || "";
   const ages = new Set();
   state.records.forEach((record) => {
     record.children.forEach((child) => {
@@ -879,31 +885,157 @@ function renderAgeOptions() {
     });
   });
 
-  select.innerHTML = "";
-  const allOpt = document.createElement("option");
-  allOpt.value = "";
-  allOpt.textContent = "كل الأعمار";
-  select.appendChild(allOpt);
-
+  list.innerHTML = "";
   [...ages]
     .sort((a, b) => Number(a) - Number(b))
     .forEach((age) => {
       const opt = document.createElement("option");
       opt.value = age;
-      opt.textContent = age;
-      select.appendChild(opt);
+      list.appendChild(opt);
     });
+}
 
-  if (current && ages.has(current)) {
-    select.value = current;
-  } else if (current) {
-    state.filters.age = "";
+function toFilterNumber(value) {
+  if (value === "" || value === null || value === undefined) return null;
+  const number = Number(value);
+  return Number.isFinite(number) && number >= 0 ? number : null;
+}
+
+function normalizeComparisonOperator(operator) {
+  const value = String(operator || "").trim().toLowerCase();
+
+  if (["gt", ">", "greater", "greater than", "أكبر من"].includes(value)) {
+    return "gt";
   }
+
+  if (
+    ["gte", ">=", "greater or equal", "greater than or equal", "أكبر أو يساوي"]
+      .includes(value)
+  ) {
+    return "gte";
+  }
+
+  if (["lt", "<", "less", "less than", "أقل من"].includes(value)) {
+    return "lt";
+  }
+
+  if (
+    ["lte", "<=", "less or equal", "less than or equal", "أقل أو يساوي"]
+      .includes(value)
+  ) {
+    return "lte";
+  }
+
+  return "eq";
+}
+
+function compareFilterNumber(actualValue, operator, expectedValue) {
+  const actual = toFilterNumber(actualValue);
+  const expected = toFilterNumber(expectedValue);
+  const comparisonOperator = normalizeComparisonOperator(operator);
+  if (actual === null || expected === null) return false;
+
+  switch (comparisonOperator) {
+    case "gt":
+      return actual > expected;
+    case "gte":
+      return actual >= expected;
+    case "lt":
+      return actual < expected;
+    case "lte":
+      return actual <= expected;
+    case "eq":
+    default:
+      return actual === expected;
+  }
+}
+
+function syncFilterStateFromControls() {
+  if (elements.filterLevel) {
+    state.filters.level = elements.filterLevel.value || "";
+  }
+
+  if (elements.filterAgeOperator) {
+    state.filters.ageOperator = normalizeComparisonOperator(
+      elements.filterAgeOperator.value,
+    );
+  }
+
+  if (elements.filterAge) {
+    state.filters.age = elements.filterAge.value || "";
+  }
+
+  if (elements.filterSupport) {
+    state.filters.support = elements.filterSupport.value || "";
+  }
+
+  if (elements.filterChildCountOperator) {
+    state.filters.childCountOperator = normalizeComparisonOperator(
+      elements.filterChildCountOperator.value,
+    );
+  }
+
+  if (elements.filterChildCount) {
+    state.filters.childCount = elements.filterChildCount.value || "";
+  }
+}
+
+function childMatchesAgeFilter(child) {
+  const { age, ageOperator } = state.filters || {};
+  return compareFilterNumber(
+    calculateAgeFromBirthDate(child.birthDate),
+    ageOperator || "eq",
+    age,
+  );
+}
+
+function recordMatchesChildCountFilter(record) {
+  const { childCount, childCountOperator } = state.filters || {};
+  if (toFilterNumber(childCount) === null) return true;
+
+  return compareFilterNumber(
+    record.children.length,
+    childCountOperator || "eq",
+    childCount,
+  );
+}
+
+function recordPassesFieldFilters(record) {
+  const { level, age, support } = state.filters || {};
+
+  if (level) {
+    const levelMatched = record.children.some((child) =>
+      normalizeStudyLevel(child.level)
+        .toLowerCase()
+        .includes(normalizeStudyLevel(level).toLowerCase()),
+    );
+    if (!levelMatched) return false;
+  }
+
+  if (
+    toFilterNumber(age) !== null &&
+    !record.children.some(childMatchesAgeFilter)
+  ) {
+    return false;
+  }
+
+  if (!recordMatchesChildCountFilter(record)) return false;
+
+  if (support) {
+    const supportStatus = familySupportStatus(record).isSupported
+      ? "supported"
+      : "unsupported";
+    if (support !== supportStatus) return false;
+  }
+
+  return true;
 }
 
 function recordMatches(record) {
   const query = state.search.trim().toLowerCase();
   // Note: do not early-return when query is empty — still apply field filters.
+
+  if (!recordPassesFieldFilters(record)) return false;
 
   const normalizedQuery = query.replace(/\s+/g, "");
   const motherCin = String(record.motherCin || "")
@@ -921,51 +1053,9 @@ function recordMatches(record) {
   const values = [
     record.motherName,
     record.motherCin,
-    record.motherPhone,
-    record.motherAddress,
     record.familyCode,
-    record.notes,
-    record.createdAt,
-    record.updatedAt,
-    formatDate(record.createdAt),
-    formatDate(record.updatedAt),
-    ...record.children.flatMap((child) => [
-      child.name,
-      child.birthDate,
-      calculateAgeFromBirthDate(child.birthDate),
-      child.level,
-      getChildSchool(child, record),
-    ]),
+    ...record.children.map((child) => child.name),
   ];
-
-  // Apply field filters (level, age, support)
-  try {
-    const { level, age, support } = state.filters || {};
-    if (level) {
-      const levelMatched = record.children.some((child) =>
-        normalizeStudyLevel(child.level)
-          .toLowerCase()
-          .includes(normalizeStudyLevel(level).toLowerCase()),
-      );
-      if (!levelMatched) return false;
-    }
-
-    if (age) {
-      const ageMatched = record.children.some(
-        (child) => calculateAgeFromBirthDate(child.birthDate) === String(age),
-      );
-      if (!ageMatched) return false;
-    }
-
-    if (support) {
-      const supportStatus = familySupportStatus(record).isSupported
-        ? "supported"
-        : "unsupported";
-      if (support !== supportStatus) return false;
-    }
-  } catch (e) {
-    // ignore filter errors
-  }
 
   return values.some((value) => {
     const text = String(value || "").toLowerCase();
@@ -1013,7 +1103,9 @@ function filterPdfChildrenByLevelSearch(records, query) {
 }
 
 function hasActiveChildDropdownFilters() {
-  return Boolean(state.filters?.level || state.filters?.age);
+  return Boolean(
+    state.filters?.level || toFilterNumber(state.filters?.age) !== null,
+  );
 }
 
 function childMatchesActiveDropdownFilters(child, record) {
@@ -1028,7 +1120,7 @@ function childMatchesActiveDropdownFilters(child, record) {
     return false;
   }
 
-  if (age && calculateAgeFromBirthDate(child.birthDate) !== String(age)) {
+  if (toFilterNumber(age) !== null && !childMatchesAgeFilter(child)) {
     return false;
   }
 
@@ -1040,6 +1132,7 @@ function applyChildDropdownFilters(record) {
 
   return {
     ...record,
+    totalChildren: record.totalChildren ?? record.children.length,
     children: record.children.filter((child) =>
       childMatchesActiveDropdownFilters(child, record),
     ),
@@ -1047,6 +1140,8 @@ function applyChildDropdownFilters(record) {
 }
 
 function currentSearchRecords() {
+  syncFilterStateFromControls();
+
   return state.records
     .filter(recordMatches)
     .map(applyChildDropdownFilters)
@@ -1447,6 +1542,12 @@ function flattenPdfRows(records) {
   });
 }
 
+function getRecordChildrenCount(record) {
+  const totalChildren = Number(record.totalChildren);
+  if (Number.isFinite(totalChildren)) return totalChildren;
+  return Array.isArray(record.children) ? record.children.length : 0;
+}
+
 function paginatePdfRows(rows, options = {}) {
   const probe = document.createElement("div");
   probe.className = "pdf-pages-container";
@@ -1514,6 +1615,7 @@ function buildPdfSheet(rows, options = {}, pageNumber = 1, totalPages = 1) {
           <th>رقم البطاقة الوطنية</th>
           <th>الهاتف</th>
           <th>العنوان</th>
+          <th>عدد الأبناء</th>
           <th>الأبناء</th>
           <th>سن</th>
           <th>المستوى الدراسي</th>
@@ -1567,6 +1669,7 @@ function buildMotherRows(groupRows) {
       <td rowspan="${rowSpan}" class="mother-cell">${escapeHtml(record.motherCin)}</td>
       <td rowspan="${rowSpan}" class="mother-cell phone-cell">${escapeHtml(record.motherPhone)}</td>
       <td rowspan="${rowSpan}" class="mother-cell">${escapeHtml(record.motherAddress)}</td>
+      <td rowspan="${rowSpan}" class="mother-cell count-cell">${escapeHtml(getRecordChildrenCount(record))}</td>
     `
           : "";
       const schoolCell = `<td class="school-cell">${escapeHtml(getChildSchool(child, record))}</td>`;
@@ -1772,7 +1875,21 @@ function bindEvents() {
     renderRecords();
   });
 
+  const handleAgeOperatorChange = (event) => {
+    state.filters.ageOperator = normalizeComparisonOperator(event.target.value);
+    state.page = 1;
+    renderRecords();
+  };
+  elements.filterAgeOperator?.addEventListener("change", handleAgeOperatorChange);
+  elements.filterAgeOperator?.addEventListener("input", handleAgeOperatorChange);
+
   elements.filterAge?.addEventListener("change", (event) => {
+    state.filters.age = event.target.value || "";
+    state.page = 1;
+    renderRecords();
+  });
+
+  elements.filterAge?.addEventListener("input", (event) => {
     state.filters.age = event.target.value || "";
     state.page = 1;
     renderRecords();
@@ -1784,11 +1901,45 @@ function bindEvents() {
     renderRecords();
   });
 
+  const handleChildCountOperatorChange = (event) => {
+    state.filters.childCountOperator = normalizeComparisonOperator(
+      event.target.value,
+    );
+    state.page = 1;
+    renderRecords();
+  };
+  elements.filterChildCountOperator?.addEventListener(
+    "change",
+    handleChildCountOperatorChange,
+  );
+  elements.filterChildCountOperator?.addEventListener(
+    "input",
+    handleChildCountOperatorChange,
+  );
+
+  elements.filterChildCount?.addEventListener("input", (event) => {
+    state.filters.childCount = event.target.value || "";
+    state.page = 1;
+    renderRecords();
+  });
+
   elements.clearFiltersBtn?.addEventListener("click", () => {
-    state.filters = { level: "", age: "", support: "" };
+    state.filters = {
+      level: "",
+      ageOperator: "eq",
+      age: "",
+      support: "",
+      childCountOperator: "eq",
+      childCount: "",
+    };
     if (elements.filterLevel) elements.filterLevel.value = "";
+    if (elements.filterAgeOperator) elements.filterAgeOperator.value = "eq";
     if (elements.filterAge) elements.filterAge.value = "";
     if (elements.filterSupport) elements.filterSupport.value = "";
+    if (elements.filterChildCountOperator) {
+      elements.filterChildCountOperator.value = "eq";
+    }
+    if (elements.filterChildCount) elements.filterChildCount.value = "";
     state.page = 1;
     renderRecords();
   });
