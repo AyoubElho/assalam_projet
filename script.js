@@ -881,6 +881,37 @@ function renderSchoolOptions() {
       });
     if (current) select.value = current;
   }
+  // Ensure filter dropdown reflects available datalist entries
+  syncSchoolFromDatalist();
+}
+
+function syncSchoolFromDatalist() {
+  const datalist = elements.schoolOptions;
+  const select = elements.filterSchool;
+  if (!datalist || !select) return;
+
+  const options = [...datalist.querySelectorAll("option")]
+    .map((o) => String(o.value || "").trim())
+    .filter(Boolean);
+
+  const unique = Array.from(new Set(options)).sort((a, b) => a.localeCompare(b, "ar"));
+
+  // Rebuild select keeping the first "all" option
+  const current = select.value || "";
+  select.innerHTML = "";
+  const allOpt = document.createElement("option");
+  allOpt.value = "";
+  allOpt.textContent = "كل المدارس";
+  select.appendChild(allOpt);
+
+  unique.forEach((school) => {
+    const opt = document.createElement("option");
+    opt.value = school;
+    opt.textContent = school;
+    select.appendChild(opt);
+  });
+
+  if (current) select.value = current;
 }
 
 function recordMatches(record) {
