@@ -35,7 +35,8 @@
       (() => {
         try {
           const theme = localStorage.getItem("familyRecordsTheme") || "light";
-          document.documentElement.dataset.theme = theme === "dark" ? "dark" : "light";
+          document.documentElement.dataset.theme =
+            theme === "dark" ? "dark" : "light";
         } catch (error) {
           document.documentElement.dataset.theme = "light";
         }
@@ -49,7 +50,11 @@
         <div class="header-row">
           <div class="header-brand">
             <img class="header-logo header-logo-light" src="logo.png" alt="" />
-            <img class="header-logo header-logo-dark" src="logo%20white.png" alt="" />
+            <img
+              class="header-logo header-logo-dark"
+              src="logo%20white.png"
+              alt=""
+            />
           </div>
           <div class="header-copy">
             <p class="text-uppercase small fw-bold mb-2 app-kicker">
@@ -227,12 +232,7 @@
             </div>
 
             <div class="form-actions mt-4">
-
-              <button
-                class="btn btn-success"
-                id="saveNewBtn"
-                type="button"
-              >
+              <button class="btn btn-success" id="saveNewBtn" type="button">
                 <i class="bi bi-arrow-return-left"></i>
                 حفظ والسطر التالي
               </button>
@@ -269,6 +269,58 @@
                 type="search"
                 placeholder="ابحث باسم الأم، رقم البطاقة الوطنية أو أحد الأبناء"
               />
+            </div>
+
+            <div class="d-flex gap-2 mb-3 align-items-center">
+              <select
+                id="filterLevel"
+                class="form-select form-select-sm"
+                aria-label="فلتر المستوى"
+              >
+                <option value="">كل المستويات</option>
+                <option value="التعليم الأولي">التعليم الأولي</option>
+                <option value="الأول ابتدائي">الأول ابتدائي</option>
+                <option value="الثاني ابتدائي">الثاني ابتدائي</option>
+                <option value="الثالث ابتدائي">الثالث ابتدائي</option>
+                <option value="الرابع ابتدائي">الرابع ابتدائي</option>
+                <option value="الخامس ابتدائي">الخامس ابتدائي</option>
+                <option value="السادس ابتدائي">السادس ابتدائي</option>
+                <option value="الأولى إعدادي">الأولى إعدادي</option>
+                <option value="الثانية إعدادي">الثانية إعدادي</option>
+                <option value="الثالثة إعدادي">الثالثة إعدادي</option>
+                <option value="الجذع المشترك">الجذع المشترك</option>
+                <option value="الأولى باكالوريا">الأولى باكالوريا</option>
+                <option value="الثانية باكالوريا">الثانية باكالوريا</option>
+                <option value="جامعي">جامعي</option>
+                <option value="غير متمدرس">غير متمدرس</option>
+              </select>
+
+              <select
+                id="filterSchool"
+                class="form-select form-select-sm"
+                aria-label="فلتر المدرسة"
+              >
+                <option value="">كل المدارس</option>
+              </select>
+
+              <select
+                id="filterSupport"
+                class="form-select form-select-sm"
+                aria-label="فلتر الدعم"
+              >
+                <option value="">الكل</option>
+                <option value="supported">مدعومة</option>
+                <option value="unsupported">غير مدعومة</option>
+              </select>
+
+              <button
+                id="clearFiltersBtn"
+                class="btn btn-outline-secondary btn-sm"
+                type="button"
+                title="مسح الفلاتر"
+              >
+                مسح
+              </button>
             </div>
 
             <div id="recordsList" class="records-list" aria-live="polite"></div>
@@ -374,7 +426,9 @@
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content profile-modal-content">
           <div class="modal-header">
-            <h2 class="modal-title h5" id="profileModalTitle">إدارة الملف الشخصي</h2>
+            <h2 class="modal-title h5" id="profileModalTitle">
+              إدارة الملف الشخصي
+            </h2>
             <button
               type="button"
               class="btn-close"
@@ -388,7 +442,9 @@
                 <div class="profile-preview" id="profileImagePreview">?</div>
                 <div class="profile-editor-fields">
                   <p class="record-meta mb-2" id="profileMeta"></p>
-                  <label class="form-label" for="profileDisplayName">الاسم المعروض</label>
+                  <label class="form-label" for="profileDisplayName"
+                    >الاسم المعروض</label
+                  >
                   <input
                     class="form-control"
                     id="profileDisplayName"
@@ -396,7 +452,9 @@
                     type="text"
                     maxlength="80"
                   />
-                  <label class="form-label mt-3" for="profileImageInput">صورة الملف</label>
+                  <label class="form-label mt-3" for="profileImageInput"
+                    >صورة الملف</label
+                  >
                   <input
                     class="form-control"
                     id="profileImageInput"
@@ -408,7 +466,11 @@
               </div>
             </div>
             <div class="modal-footer">
-              <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+              <button
+                type="button"
+                class="btn btn-outline-secondary"
+                data-bs-dismiss="modal"
+              >
                 إلغاء
               </button>
               <button class="btn btn-primary" id="profileSaveBtn" type="submit">
@@ -431,7 +493,9 @@
       <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content account-modal-content">
           <div class="modal-header">
-            <h2 class="modal-title h5" id="accountsModalTitle">إدارة الحسابات</h2>
+            <h2 class="modal-title h5" id="accountsModalTitle">
+              إدارة الحسابات
+            </h2>
             <button
               type="button"
               class="btn-close"
@@ -440,10 +504,16 @@
             ></button>
           </div>
           <div class="modal-body">
-            <form id="accountForm" class="account-create-form" autocomplete="off">
+            <form
+              id="accountForm"
+              class="account-create-form"
+              autocomplete="off"
+            >
               <div class="row g-3 align-items-end">
                 <div class="col-md-4">
-                  <label class="form-label" for="accountUsername">اسم المستخدم</label>
+                  <label class="form-label" for="accountUsername"
+                    >اسم المستخدم</label
+                  >
                   <input
                     class="form-control"
                     id="accountUsername"
@@ -461,7 +531,9 @@
                   </select>
                 </div>
                 <div class="col-md-5">
-                  <label class="form-label" for="accountPassword">كلمة المرور</label>
+                  <label class="form-label" for="accountPassword"
+                    >كلمة المرور</label
+                  >
                   <div class="input-group">
                     <input
                       class="form-control"
@@ -482,14 +554,22 @@
                 </div>
               </div>
               <div class="account-form-actions">
-                <button class="btn btn-primary" id="accountCreateBtn" type="submit">
+                <button
+                  class="btn btn-primary"
+                  id="accountCreateBtn"
+                  type="submit"
+                >
                   <i class="bi bi-person-plus"></i>
                   إضافة حساب
                 </button>
               </div>
             </form>
 
-            <div class="generated-password-box" id="generatedPasswordBox" hidden>
+            <div
+              class="generated-password-box"
+              id="generatedPasswordBox"
+              hidden
+            >
               <div>
                 <span>كلمة المرور الجديدة</span>
                 <code id="generatedPasswordValue"></code>
@@ -504,7 +584,11 @@
               </button>
             </div>
 
-            <div class="accounts-list" id="accountsList" aria-live="polite"></div>
+            <div
+              class="accounts-list"
+              id="accountsList"
+              aria-live="polite"
+            ></div>
           </div>
         </div>
       </div>

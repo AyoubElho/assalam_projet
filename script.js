@@ -1,5 +1,9 @@
 const API_BASE_STORAGE_KEY = "familyRecordsApiBase";
-const API_FALLBACK_BASES = ["", "http://localhost:8000", "http://127.0.0.1:8000"];
+const API_FALLBACK_BASES = [
+  "",
+  "http://localhost:8000",
+  "http://127.0.0.1:8000",
+];
 const MYSQL_SAVE_ENDPOINTS = endpointCandidates("api/save_records.php");
 const MYSQL_LOAD_ENDPOINTS = endpointCandidates("api/get_records.php");
 const MYSQL_DELETE_ENDPOINTS = endpointCandidates("api/delete_record.php");
@@ -21,6 +25,11 @@ const state = {
   pageSize: 10,
   currentUser: null,
   accounts: [],
+  filters: {
+    level: "",
+    school: "",
+    support: "",
+  },
 };
 
 const elements = {
@@ -72,6 +81,10 @@ const elements = {
   pageSizeSelect: document.getElementById("pageSizeSelect"),
   recordCount: document.getElementById("recordCount"),
   searchInput: document.getElementById("searchInput"),
+  filterLevel: document.getElementById("filterLevel"),
+  filterSchool: document.getElementById("filterSchool"),
+  filterSupport: document.getElementById("filterSupport"),
+  clearFiltersBtn: document.getElementById("clearFiltersBtn"),
   formModeBadge: document.getElementById("formModeBadge"),
   toast: document.getElementById("appToast"),
   toastMessage: document.getElementById("toastMessage"),
@@ -97,7 +110,10 @@ function setStoredApiBase(base) {
 }
 
 function endpointCandidates(path) {
-  if (window.location.protocol === "http:" || window.location.protocol === "https:") {
+  if (
+    window.location.protocol === "http:" ||
+    window.location.protocol === "https:"
+  ) {
     return [path];
   }
 
@@ -252,7 +268,10 @@ async function saveProfile(event) {
   if (!state.currentUser) return;
 
   const formData = new FormData();
-  formData.append("displayName", elements.profileDisplayName?.value.trim() || "");
+  formData.append(
+    "displayName",
+    elements.profileDisplayName?.value.trim() || "",
+  );
   const file = elements.profileImageInput?.files?.[0];
   if (file) {
     formData.append("profileImage", file);
@@ -279,7 +298,10 @@ async function saveProfile(event) {
 function previewSelectedProfileImage() {
   const file = elements.profileImageInput?.files?.[0];
   if (!file) {
-    setAvatarElement(elements.profileImagePreview, state.currentUser?.profile?.imageUrl || "");
+    setAvatarElement(
+      elements.profileImagePreview,
+      state.currentUser?.profile?.imageUrl || "",
+    );
     return;
   }
 
@@ -295,21 +317,26 @@ function roleLabel(role) {
 }
 
 function generateLocalPassword(length = 12) {
-  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789@$%#";
+  const alphabet =
+    "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789@$%#";
   const values = new Uint32Array(length);
 
   if (window.crypto?.getRandomValues) {
     window.crypto.getRandomValues(values);
-    return [...values].map((value) => alphabet[value % alphabet.length]).join("");
+    return [...values]
+      .map((value) => alphabet[value % alphabet.length])
+      .join("");
   }
 
-  return Array.from({ length }, () =>
-    alphabet[Math.floor(Math.random() * alphabet.length)],
+  return Array.from(
+    { length },
+    () => alphabet[Math.floor(Math.random() * alphabet.length)],
   ).join("");
 }
 
 function showGeneratedPassword(password = "") {
-  if (!elements.generatedPasswordBox || !elements.generatedPasswordValue) return;
+  if (!elements.generatedPasswordBox || !elements.generatedPasswordValue)
+    return;
 
   elements.generatedPasswordValue.textContent = password;
   elements.generatedPasswordBox.hidden = !password;
@@ -372,7 +399,9 @@ function renderAccounts() {
     return;
   }
 
-  const adminCount = state.accounts.filter((account) => account.role === "admin").length;
+  const adminCount = state.accounts.filter(
+    (account) => account.role === "admin",
+  ).length;
   elements.accountsList.innerHTML = state.accounts
     .map((account) => {
       const username = String(account.username || "");
@@ -439,7 +468,9 @@ async function createAccount(event) {
       role,
       password,
     });
-    state.accounts = Array.isArray(result.accounts) ? result.accounts : state.accounts;
+    state.accounts = Array.isArray(result.accounts)
+      ? result.accounts
+      : state.accounts;
     renderAccounts();
     showGeneratedPassword(result.generatedPassword || password);
     elements.accountForm?.reset();
@@ -465,16 +496,25 @@ async function handleAccountAction(event) {
     if (action === "saveRole") {
       const role = item.querySelector("[data-role-control]")?.value || "writer";
       const result = await accountRequest({ action: "update", username, role });
-      state.accounts = Array.isArray(result.accounts) ? result.accounts : state.accounts;
+      state.accounts = Array.isArray(result.accounts)
+        ? result.accounts
+        : state.accounts;
       renderAccounts();
       showToast("تم تحديث الدور.", "success");
     }
 
     if (action === "resetPassword") {
-      const confirmed = confirm(`هل تريد توليد كلمة مرور جديدة لحساب ${username}؟`);
+      const confirmed = confirm(
+        `هل تريد توليد كلمة مرور جديدة لحساب ${username}؟`,
+      );
       if (!confirmed) return;
-      const result = await accountRequest({ action: "resetPassword", username });
-      state.accounts = Array.isArray(result.accounts) ? result.accounts : state.accounts;
+      const result = await accountRequest({
+        action: "resetPassword",
+        username,
+      });
+      state.accounts = Array.isArray(result.accounts)
+        ? result.accounts
+        : state.accounts;
       renderAccounts();
       showGeneratedPassword(result.generatedPassword || "");
       showToast("تم توليد كلمة مرور جديدة.", "success");
@@ -484,7 +524,9 @@ async function handleAccountAction(event) {
       const confirmed = confirm(`هل تريد حذف حساب ${username}؟`);
       if (!confirmed) return;
       const result = await accountRequest({ action: "delete", username });
-      state.accounts = Array.isArray(result.accounts) ? result.accounts : state.accounts;
+      state.accounts = Array.isArray(result.accounts)
+        ? result.accounts
+        : state.accounts;
       renderAccounts();
       showGeneratedPassword("");
       showToast("تم حذف الحساب.", "success");
@@ -819,11 +861,31 @@ function renderSchoolOptions() {
       option.value = school;
       elements.schoolOptions.appendChild(option);
     });
+
+  // Also populate the filter select for schools if present
+  if (elements.filterSchool) {
+    const select = elements.filterSchool;
+    const current = select.value || "";
+    select.innerHTML = "";
+    const allOpt = document.createElement("option");
+    allOpt.value = "";
+    allOpt.textContent = "كل المدارس";
+    select.appendChild(allOpt);
+    [...schools]
+      .sort((a, b) => a.localeCompare(b, "ar"))
+      .forEach((school) => {
+        const opt = document.createElement("option");
+        opt.value = school;
+        opt.textContent = school;
+        select.appendChild(opt);
+      });
+    if (current) select.value = current;
+  }
 }
 
 function recordMatches(record) {
   const query = state.search.trim().toLowerCase();
-  if (!query) return true;
+  // Note: do not early-return when query is empty — still apply field filters.
 
   const normalizedQuery = query.replace(/\s+/g, "");
   const motherCin = String(record.motherCin || "")
@@ -856,6 +918,41 @@ function recordMatches(record) {
       getChildSchool(child, record),
     ]),
   ];
+
+  // Apply field filters (level, school, support)
+  try {
+    const { level, school, support } = state.filters || {};
+    if (level) {
+      const levelMatched = record.children.some((child) =>
+        normalizeStudyLevel(child.level)
+          .toLowerCase()
+          .includes(normalizeStudyLevel(level).toLowerCase()),
+      );
+      if (!levelMatched) return false;
+    }
+
+    if (school) {
+      const schoolMatched =
+        record.children.some((child) =>
+          String(getChildSchool(child, record) || "")
+            .toLowerCase()
+            .includes(String(school || "").toLowerCase()),
+        ) ||
+        String(record.notes || "")
+          .toLowerCase()
+          .includes(String(school || "").toLowerCase());
+      if (!schoolMatched) return false;
+    }
+
+    if (support) {
+      const supportStatus = familySupportStatus(record).isSupported
+        ? "supported"
+        : "unsupported";
+      if (support !== supportStatus) return false;
+    }
+  } catch (e) {
+    // ignore filter errors
+  }
 
   return values.some((value) => {
     const text = String(value || "").toLowerCase();
@@ -1539,7 +1636,10 @@ function bindEvents() {
   elements.themeToggleBtn?.addEventListener("click", toggleTheme);
   elements.logoutBtn?.addEventListener("click", logout);
   elements.profileForm?.addEventListener("submit", saveProfile);
-  elements.profileImageInput?.addEventListener("change", previewSelectedProfileImage);
+  elements.profileImageInput?.addEventListener(
+    "change",
+    previewSelectedProfileImage,
+  );
   elements.profileModal?.addEventListener("show.bs.modal", () => {
     applyProfileToUi();
     refreshProfile().catch(() => {});
@@ -1555,7 +1655,10 @@ function bindEvents() {
     if (elements.accountPassword) elements.accountPassword.value = password;
     showGeneratedPassword(password);
   });
-  elements.copyGeneratedPasswordBtn?.addEventListener("click", copyGeneratedPassword);
+  elements.copyGeneratedPasswordBtn?.addEventListener(
+    "click",
+    copyGeneratedPassword,
+  );
   elements.accountsList?.addEventListener("click", handleAccountAction);
 
   elements.addChildBtn.addEventListener("click", () =>
@@ -1582,6 +1685,34 @@ function bindEvents() {
 
   elements.searchInput.addEventListener("input", (event) => {
     state.search = event.target.value;
+    state.page = 1;
+    renderRecords();
+  });
+
+  // Field filter handlers
+  elements.filterLevel?.addEventListener("change", (event) => {
+    state.filters.level = event.target.value || "";
+    state.page = 1;
+    renderRecords();
+  });
+
+  elements.filterSchool?.addEventListener("change", (event) => {
+    state.filters.school = event.target.value || "";
+    state.page = 1;
+    renderRecords();
+  });
+
+  elements.filterSupport?.addEventListener("change", (event) => {
+    state.filters.support = event.target.value || "";
+    state.page = 1;
+    renderRecords();
+  });
+
+  elements.clearFiltersBtn?.addEventListener("click", () => {
+    state.filters = { level: "", school: "", support: "" };
+    if (elements.filterLevel) elements.filterLevel.value = "";
+    if (elements.filterSchool) elements.filterSchool.value = "";
+    if (elements.filterSupport) elements.filterSupport.value = "";
     state.page = 1;
     renderRecords();
   });
