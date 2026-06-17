@@ -83,6 +83,8 @@ function ensure_schema(PDO $pdo): void
                 ON DELETE CASCADE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
     );
+
+    drop_column_if_exists($pdo, 'children', 'age');
 }
 
 function ensure_column(PDO $pdo, string $table, string $column, string $definition): void
@@ -107,6 +109,30 @@ function ensure_column(PDO $pdo, string $table, string $column, string $definiti
     $safeTable = '`' . str_replace('`', '``', $table) . '`';
     $safeColumn = '`' . str_replace('`', '``', $column) . '`';
     $pdo->exec("ALTER TABLE {$safeTable} ADD COLUMN {$safeColumn} {$definition}");
+}
+
+function drop_column_if_exists(PDO $pdo, string $table, string $column): void
+{
+    $stmt = $pdo->prepare(
+        'SELECT COUNT(*)
+         FROM INFORMATION_SCHEMA.COLUMNS
+         WHERE TABLE_SCHEMA = :schema
+           AND TABLE_NAME = :table
+           AND COLUMN_NAME = :column'
+    );
+    $stmt->execute([
+        ':schema' => DB_NAME,
+        ':table' => $table,
+        ':column' => $column,
+    ]);
+
+    if ((int) $stmt->fetchColumn() === 0) {
+        return;
+    }
+
+    $safeTable = '`' . str_replace('`', '``', $table) . '`';
+    $safeColumn = '`' . str_replace('`', '``', $column) . '`';
+    $pdo->exec("ALTER TABLE {$safeTable} DROP COLUMN {$safeColumn}");
 }
 
 function mysql_datetime(?string $value): ?string

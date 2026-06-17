@@ -1166,6 +1166,23 @@ function formatDate(value) {
   }).format(new Date(value));
 }
 
+function calculateAgeFromBirthDate(value) {
+  if (!value) return "";
+
+  const [year, month, day] = String(value).split("-").map(Number);
+  if (!year || !month || !day) return "";
+
+  const today = new Date();
+  let age = today.getFullYear() - year;
+  const hasBirthdayPassed =
+    today.getMonth() + 1 > month ||
+    (today.getMonth() + 1 === month && today.getDate() >= day);
+
+  if (!hasBirthdayPassed) age -= 1;
+
+  return age >= 0 ? String(age) : "";
+}
+
 function fillForm(record) {
   elements.recordId.value = record.id;
   elements.motherName.value = record.motherName;
@@ -1478,7 +1495,7 @@ function buildPdfSheet(rows, options = {}, pageNumber = 1, totalPages = 1) {
           <th>الهاتف</th>
           <th>العنوان</th>
           <th>الأبناء</th>
-          <th>تاريخ الازدياد</th>
+          <th>السن</th>
           <th>المستوى الدراسي</th>
           <th>المدرسة</th>
         </tr>
@@ -1538,7 +1555,7 @@ function buildMotherRows(groupRows) {
       <tr${groupClass}>
         ${motherCells}
         <td>${escapeHtml(child.name)}</td>
-        <td>${escapeHtml(child.birthDate)}</td>
+        <td class="age-cell">${escapeHtml(calculateAgeFromBirthDate(child.birthDate))}</td>
         <td>${escapeHtml(child.level)}</td>
         ${schoolCell}
       </tr>
@@ -1570,7 +1587,7 @@ function exportCsv() {
     "الهاتف",
     "العنوان",
     "اسم الابن",
-    "تاريخ الازدياد",
+    "العمر",
     "المستوى الدراسي",
     "المدرسة",
     "تاريخ الحفظ",
@@ -1599,7 +1616,7 @@ function exportCsv() {
       record.motherPhone,
       record.motherAddress,
       child.name,
-      child.birthDate,
+      calculateAgeFromBirthDate(child.birthDate),
       child.level,
       getChildSchool(child, record),
       record.createdAt,

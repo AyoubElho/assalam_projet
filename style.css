@@ -1251,15 +1251,15 @@ body::before {
 }
 
 .pdf-capture-sheet th:nth-child(5) {
-  width: 14%;
+  width: 16%;
 }
 
 .pdf-capture-sheet th:nth-child(6) {
-  width: 12%;
+  width: 11%;
 }
 
 .pdf-capture-sheet th:nth-child(7) {
-  width: 11%;
+  width: 7%;
 }
 
 .pdf-capture-sheet th:nth-child(8) {
@@ -1267,7 +1267,7 @@ body::before {
 }
 
 .pdf-capture-sheet th:nth-child(9) {
-  width: 13%;
+  width: 15%;
 }
 
 .pdf-capture-sheet th {
@@ -1303,6 +1303,11 @@ body::before {
   white-space: nowrap;
   direction: ltr;
   text-align: center;
+}
+
+.pdf-capture-sheet .age-cell {
+  text-align: center;
+  white-space: nowrap;
 }
 
 .continued-label {
