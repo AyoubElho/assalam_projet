@@ -1,0 +1,83 @@
+name: Deploy to InfinityFree
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+concurrency:
+  group: infinityfree-ftp-deploy
+  cancel-in-progress: true
+
+jobs:
+  ftp-deploy:
+    name: FTP deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create production database config
+        env:
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASS: ${{ secrets.DB_PASS }}
+        run: |
+          if [ -z "$DB_HOST" ] || [ -z "$DB_NAME" ] || [ -z "$DB_USER" ]; then
+            echo "DB secrets are not complete. Deploying repository api/config.php."
+            exit 0
+          fi
+
+          node <<'NODE'
+          const fs = require("fs");
+          const q = (value) => JSON.stringify(value || "");
+
+          fs.writeFileSync("api/config.php", `<?php
+          declare(strict_types=1);
+
+          const DB_HOST = ${q(process.env.DB_HOST)};
+          const DB_NAME = ${q(process.env.DB_NAME)};
+          const DB_USER = ${q(process.env.DB_USER)};
+          const DB_PASS = ${q(process.env.DB_PASS)};
+          const DB_CHARSET = 'utf8mb4';
+
+          const APP_USERS = [
+              'admin' => [
+                  'password_hash' => '$2y$10$WJ5Diip8Iq0mmATmv/vkxekLKYxalh5hE/MfE7Q0px8ZKJjdEid/y',
+                  'role' => 'admin',
+              ],
+              'writer' => [
+                  'password_hash' => '$2y$10$fXeisi3x9q77.hTGAXyEbOgr0UC.ST.GbfXJZcghivFHOcltbhWg6',
+                  'role' => 'writer',
+              ],
+          ];
+          `);
+          NODE
+
+      - name: Upload files to InfinityFree
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftp
+          local-dir: ./
+          server-dir: ${{ secrets.FTP_SERVER_DIR || '/htdocs/' }}
+          exclude: |
+            **/.git*
+            **/.git*/**
+            .github/**
+            .agents/**
+            .codex/**
+            api/sessions/**
+            api/uploads/**
+            api/users.json
+            api/profiles.json
+            node_modules/**
+            assalam charts/**
+            database.sql
+            server.js
