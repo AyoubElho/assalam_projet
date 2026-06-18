@@ -42,7 +42,7 @@
         }
       })();
     </script>
-    <link href="style.css?v=71" rel="stylesheet" />
+    <link href="style.css?v=79" rel="stylesheet" />
   </head>
   <body class="antialiased">
     <header class="app-header">
@@ -215,7 +215,7 @@
             <div class="form-actions mt-4">
               <button class="btn btn-success" id="saveNewBtn" type="button">
                 <i class="bi bi-arrow-return-left"></i>
-                حفظ والسطر التالي
+                حفظ
               </button>
               <button
                 class="btn btn-outline-secondary"
@@ -245,7 +245,7 @@
               >
                 <button
                   id="recordsCsvBtn"
-                  class="btn btn-outline-secondary btn-sm"
+                  class="btn btn-sm export-btn export-excel-btn"
                   type="button"
                   title="تصدير Excel"
                 >
@@ -254,7 +254,7 @@
                 </button>
                 <button
                   id="recordsPdfBtn"
-                  class="btn btn-outline-secondary btn-sm"
+                  class="btn btn-sm export-btn export-pdf-btn"
                   type="button"
                   title="تصدير PDF"
                 >
@@ -369,9 +369,10 @@
                 class="btn clear-filters-btn btn-sm"
                 type="button"
                 title="مسح الفلاتر"
+                aria-label="مسح الفلاتر"
               >
-                <i class="bi bi-arrow-counterclockwise"></i>
-                <span>مسح الفلاتر</span>
+                <i class="bi bi-funnel-fill" aria-hidden="true"></i>
+                <i class="bi bi-x-lg clear-filter-x" aria-hidden="true"></i>
               </button>
             </div>
 
@@ -671,6 +672,6 @@
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ar.js"></script>
-    <script src="script.js?v=78"></script>
+    <script src="script.js?v=79"></script>
   </body>
 </html>

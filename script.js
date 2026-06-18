@@ -711,11 +711,23 @@ function addChildRow(child = {}) {
   elements.childrenBody.appendChild(row);
 }
 
+function setSaveButtonMode(isEditing = false) {
+  if (!elements.saveNewBtn) return;
+
+  elements.saveNewBtn.innerHTML = isEditing
+    ? '<i class="bi bi-check2-circle"></i> تحديث '
+    : '<i class="bi bi-arrow-return-left"></i> حفظ';
+  elements.saveNewBtn.title = isEditing
+    ? "تحديث "
+    : "حفظ";
+}
+
 function resetForm() {
   elements.form.reset();
   elements.recordId.value = "";
   elements.childrenBody.innerHTML = "";
   addChildRow();
+  setSaveButtonMode(false);
   elements.formModeBadge.textContent = "إضافة جديدة";
   document
     .querySelectorAll(".record-item.active")
@@ -1312,6 +1324,7 @@ function fillForm(record) {
     }),
   );
   if (!record.children.length) addChildRow();
+  setSaveButtonMode(true);
   elements.formModeBadge.textContent = "تعديل بيانات";
   renderRecords();
   elements.motherName.focus();
@@ -1845,7 +1858,8 @@ function bindEvents() {
   });
 
   elements.saveNewBtn.addEventListener("click", async () => {
-    await handleSave({ startNew: true });
+    const isEditing = Boolean(elements.recordId.value);
+    await handleSave({ startNew: !isEditing });
   });
 
   elements.newFormBtn.addEventListener("click", resetForm);
