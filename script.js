@@ -1388,10 +1388,14 @@ async function handleSave({ startNew = false } = {}) {
 
   const mysqlResult = await syncRecordsToMySql([record], { silent: true });
   if (!mysqlResult) {
-    showToast(
-      state.lastSyncError?.message || "تعذر الحفظ في MySQL. لم يتم حفظ السجل.",
-      "danger",
-    );
+    const message =
+      state.lastSyncError?.message || "تعذر الحفظ في MySQL. لم يتم حفظ السجل.";
+    if (message.includes("رقم البطاقة الوطنية موجود")) {
+      elements.motherCin.setCustomValidity("رقم البطاقة الوطنية موجود مسبقا.");
+      elements.motherCin.focus();
+      elements.form.reportValidity();
+    }
+    showToast(message, "danger");
     return null;
   }
 
@@ -1439,7 +1443,16 @@ async function syncRecordsToMySql(
           : null;
 
         if (!response.ok || !result?.success) {
-          throw new Error(result?.message || `HTTP ${response.status}`);
+          const error = new Error(result?.message || `HTTP ${response.status}`);
+          const duplicateCinError = String(result?.message || "").includes(
+            "رقم البطاقة الوطنية موجود",
+          );
+          error.status = response.status;
+          error.isValidationError =
+            Boolean(result?.message) &&
+            ((response.status >= 400 && response.status < 500) ||
+              duplicateCinError);
+          throw error;
         }
 
         setStoredApiBase(apiBaseFromEndpoint(endpoint));
@@ -1452,6 +1465,7 @@ async function syncRecordsToMySql(
         return result;
       } catch (error) {
         lastError = error;
+        if (error.isValidationError) throw error;
       }
     }
 

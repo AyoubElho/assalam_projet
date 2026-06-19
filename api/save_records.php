@@ -187,9 +187,14 @@ try {
     if (isset($pdo) && $pdo instanceof PDO && $pdo->inTransaction()) {
         $pdo->rollBack();
     }
+    $message = $error->getMessage();
     $status = (int) $error->getCode();
+    if ($error instanceof PDOException && $error->getCode() === '23000' && stripos($message, 'uniq_mother_cin') !== false) {
+        $message = 'رقم البطاقة الوطنية موجود مسبقا.';
+        $status = 409;
+    }
     if ($status < 400 || $status > 599) {
         $status = 500;
     }
-    json_response(['success' => false, 'message' => $error->getMessage()], $status);
+    json_response(['success' => false, 'message' => $message], $status);
 }
