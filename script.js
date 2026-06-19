@@ -988,6 +988,22 @@ function normalizeComparisonOperator(operator) {
   return "eq";
 }
 
+function comparisonOperatorLabel(operator) {
+  switch (normalizeComparisonOperator(operator)) {
+    case "gt":
+      return "أكبر من";
+    case "gte":
+      return "أكبر أو يساوي";
+    case "lt":
+      return "أقل من";
+    case "lte":
+      return "أقل أو يساوي";
+    case "eq":
+    default:
+      return "يساوي";
+  }
+}
+
 function compareFilterNumber(actualValue, operator, expectedValue) {
   const actual = toFilterNumber(actualValue);
   const expected = toFilterNumber(expectedValue);
@@ -1037,6 +1053,37 @@ function syncFilterStateFromControls() {
   if (elements.filterChildCount) {
     state.filters.childCount = elements.filterChildCount.value || "";
   }
+}
+
+function getActivePdfFilterSummary() {
+  syncFilterStateFromControls();
+
+  const summary = [];
+  const search = state.search.trim();
+  const { level, age, ageOperator, support, childCount, childCountOperator } =
+    state.filters || {};
+  const ageValue = toFilterNumber(age);
+  const childCountValue = toFilterNumber(childCount);
+
+  if (search) summary.push(`البحث: ${search}`);
+  if (level) summary.push(`المستوى الدراسي: ${level}`);
+  if (ageValue !== null) {
+    summary.push(`السن: ${comparisonOperatorLabel(ageOperator)} ${ageValue}`);
+  }
+  if (support) {
+    summary.push(
+      `الدعم: ${support === "supported" ? "مدعومة" : "غير مدعومة"}`,
+    );
+  }
+  if (childCountValue !== null) {
+    summary.push(
+      `عدد الأبناء: ${comparisonOperatorLabel(childCountOperator)} ${childCountValue}`,
+    );
+  }
+
+  return summary.length
+    ? `التصفية: ${summary.join(" | ")}`
+    : "التصفية: كل السجلات";
 }
 
 function childMatchesAgeFilter(child) {
@@ -1556,8 +1603,9 @@ async function generateAllRecordsPdf(records) {
     title: "لائحة أطفال المؤسسة 2025-2026 موسم",
     fileName: "all-family-records.pdf",
     meta: [
-      `عدد الأسر: ${records.length}`,
-      `عدد الأبناء: ${childrenCount}`,
+      getActivePdfFilterSummary(),
+      `عدد الأسر المطابقة: ${records.length}`,
+      `عدد الأبناء في التقرير: ${childrenCount}`,
       `تاريخ التصدير: ${formatDate(new Date().toISOString())}`,
     ],
   });

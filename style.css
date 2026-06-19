@@ -1501,21 +1501,24 @@ body::before {
 
 .pdf-sheet-header {
   display: grid;
-  grid-template-columns: 190px 1fr 190px;
+  grid-template-columns: 86px 1fr 86px;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 16px;
-  direction: ltr;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #d8e1ef;
+  direction: rtl;
 }
 
 .pdf-logo,
 .pdf-logo-spacer {
-  width: 172px;
-  height: 106px;
+  width: 76px;
+  height: 50px;
 }
 
 .pdf-logo {
   object-fit: contain;
+  justify-self: start;
 }
 
 .pdf-title-block {
@@ -1525,18 +1528,34 @@ body::before {
 }
 
 .pdf-capture-sheet h2 {
-  margin: 0 0 6px;
-  font-size: 23px;
+  margin: 0 0 7px;
+  font-size: 21px;
   font-weight: 700;
+  line-height: 1.25;
   text-align: center;
 }
 
 .pdf-capture-sheet .pdf-meta {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 12px;
-  font-size: 15px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px 8px;
+  font-size: 12.5px;
+  line-height: 1.35;
+}
+
+.pdf-capture-sheet .pdf-meta strong {
+  display: block;
+  min-width: 0;
+  padding: 2px 6px;
+  border: 1px solid #e4eaf3;
+  border-radius: 4px;
+  background: #f8fafc;
+  overflow-wrap: anywhere;
+  font-weight: 700;
+}
+
+.pdf-capture-sheet .pdf-meta strong:first-child {
+  grid-column: 1 / -1;
 }
 
 .pdf-capture-sheet table {
@@ -1574,19 +1593,19 @@ body::before {
 }
 
 .pdf-capture-sheet th:nth-child(5) {
-  width: 13%;
+  width: 15%;
 }
 
 .pdf-capture-sheet th:nth-child(6) {
-  width: 8.5%;
+  width: 6%;
   text-align: center;
-  white-space: nowrap;
+  white-space: normal;
   word-break: normal;
   overflow-wrap: normal;
 }
 
 .pdf-capture-sheet th:nth-child(7) {
-  width: 10.5%;
+  width: 12.5%;
 }
 
 .pdf-capture-sheet th:nth-child(8) {
@@ -1598,11 +1617,11 @@ body::before {
 }
 
 .pdf-capture-sheet th:nth-child(9) {
-  width: 13%;
+  width: 15%;
 }
 
 .pdf-capture-sheet th:nth-child(10) {
-  width: 15.5%;
+  width: 12%;
 }
 
 .pdf-capture-sheet th {
@@ -1612,10 +1631,10 @@ body::before {
 
 .pdf-capture-sheet th:nth-child(6),
 .pdf-capture-sheet th:nth-child(8) {
-  font-size: 10px;
-  line-height: 1.35;
+  font-size: 9px;
+  line-height: 1.2;
   text-align: center;
-  white-space: nowrap;
+  white-space: normal;
   word-break: keep-all;
   overflow-wrap: normal;
 }
@@ -1699,6 +1718,7 @@ body::before {
   .records-panel {
     position: static;
   }
+
 }
 
 @media (max-width: 767.98px) {
