@@ -1331,10 +1331,6 @@ function renderRecords() {
             <i class="bi bi-pencil-square"></i>
             تعديل
           </button>
-          <button class="btn btn-outline-secondary btn-sm" type="button" data-action="pdf">
-            <i class="bi bi-file-earmark-pdf"></i>
-            PDF
-          </button>
           <button class="btn btn-outline-danger btn-sm" type="button" data-action="delete">
             <i class="bi bi-trash3"></i>
             حذف
@@ -2099,18 +2095,11 @@ function bindEvents() {
     if (!button || !item) return;
 
     const record = state.records.find((entry) => entry.id === item.dataset.id);
-    const visibleRecord = currentSearchRecords().find(
-      (entry) => entry.id === item.dataset.id,
-    );
     if (!record) return;
 
     const action = button.dataset.action;
     if (action === "edit") {
       fillForm(record);
-    }
-
-    if (action === "pdf") {
-      await generatePdf(visibleRecord || record);
     }
 
     if (action === "delete") {
