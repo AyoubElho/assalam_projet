@@ -21,6 +21,24 @@ if (!is_array($payload) || !isset($payload['records']) || !is_array($payload['re
     json_response(['success' => false, 'message' => 'Invalid JSON payload'], 400);
 }
 
+function normalize_unique_value(?string $value, bool $compactWhitespace = false): string
+{
+    $text = trim((string) $value);
+    if ($text === '') {
+        return '';
+    }
+
+    $replacement = $compactWhitespace ? '' : ' ';
+    $normalized = preg_replace('/\s+/u', $replacement, $text);
+    if (is_string($normalized)) {
+        $text = $normalized;
+    }
+
+    return function_exists('mb_strtolower')
+        ? mb_strtolower($text, 'UTF-8')
+        : strtolower($text);
+}
+
 try {
     $pdo = db();
     $pdo->beginTransaction();
@@ -43,6 +61,15 @@ try {
     $deleteChildrenStmt = $pdo->prepare('DELETE FROM children WHERE family_id = :family_id');
     $existingCodeStmt = $pdo->prepare('SELECT family_code FROM families WHERE id = :id');
     $maxCodeStmt = $pdo->prepare('SELECT COALESCE(MAX(CAST(family_code AS UNSIGNED)), 0) AS max_code FROM families');
+    $duplicateCinStmt = $pdo->prepare(
+        "SELECT id
+         FROM families
+         WHERE id <> :id
+           AND mother_cin IS NOT NULL
+           AND TRIM(mother_cin) <> ''
+           AND LOWER(REPLACE(TRIM(mother_cin), ' ', '')) = :mother_cin_key
+         LIMIT 1"
+    );
     $childStmt = $pdo->prepare(
         "INSERT INTO children
             (family_id, child_order, name, birth_date, level, school)
@@ -52,6 +79,7 @@ try {
 
     $saved = 0;
     $savedRecords = [];
+    $seenMotherCins = [];
     foreach ($payload['records'] as $record) {
         if (!is_array($record) || empty($record['id']) || empty($record['motherName'])) {
             continue;
@@ -77,6 +105,23 @@ try {
         $notes = isset($record['notes']) ? (string) $record['notes'] : null;
         $createdAt = mysql_datetime($record['createdAt'] ?? null);
         $updatedAt = mysql_datetime($record['updatedAt'] ?? null);
+
+        $motherCinKey = normalize_unique_value($motherCin, true);
+
+        if ($motherCinKey !== '') {
+            if (isset($seenMotherCins[$motherCinKey]) && $seenMotherCins[$motherCinKey] !== $familyId) {
+                throw new RuntimeException('رقم البطاقة الوطنية موجود مسبقا.', 409);
+            }
+            $seenMotherCins[$motherCinKey] = $familyId;
+
+            $duplicateCinStmt->execute([
+                ':id' => $familyId,
+                ':mother_cin_key' => $motherCinKey,
+            ]);
+            if ($duplicateCinStmt->fetchColumn() !== false) {
+                throw new RuntimeException('رقم البطاقة الوطنية موجود مسبقا.', 409);
+            }
+        }
 
         $familyStmt->execute([
             ':id' => $familyId,
@@ -142,5 +187,9 @@ try {
     if (isset($pdo) && $pdo instanceof PDO && $pdo->inTransaction()) {
         $pdo->rollBack();
     }
-    json_response(['success' => false, 'message' => $error->getMessage()], 500);
+    $status = (int) $error->getCode();
+    if ($status < 400 || $status > 599) {
+        $status = 500;
+    }
+    json_response(['success' => false, 'message' => $error->getMessage()], $status);
 }

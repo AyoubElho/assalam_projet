@@ -25,6 +25,7 @@ const state = {
   pageSize: 10,
   currentUser: null,
   accounts: [],
+  lastSyncError: null,
   filters: {
     level: "",
     ageOperator: "eq",
@@ -636,6 +637,51 @@ function createId() {
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
+function normalizeUniqueValue(value, { compact = false } = {}) {
+  const text = String(value || "").trim().toLowerCase();
+  return compact ? text.replace(/\s+/g, "") : text.replace(/\s+/g, " ");
+}
+
+function clearMotherCinValidity() {
+  elements.motherCin.setCustomValidity("");
+}
+
+function findMotherCinDuplicate(record) {
+  const motherCin = normalizeUniqueValue(record.motherCin, { compact: true });
+
+  const duplicateCin = motherCin
+    ? state.records.find(
+        (existing) =>
+          existing.id !== record.id &&
+          normalizeUniqueValue(existing.motherCin, { compact: true }) ===
+            motherCin,
+      )
+    : null;
+  if (duplicateCin) {
+    return {
+      field: elements.motherCin,
+      message: "رقم البطاقة الوطنية موجود مسبقا.",
+      toast:
+        "رقم البطاقة الوطنية موجود مسبقا. أدخل رقما مختلفا أو عدل السجل الموجود.",
+    };
+  }
+
+  return null;
+}
+
+function validateUniqueMotherCin(record) {
+  clearMotherCinValidity();
+
+  const duplicate = findMotherCinDuplicate(record);
+  if (!duplicate) return true;
+
+  duplicate.field.setCustomValidity(duplicate.message);
+  duplicate.field.focus();
+  elements.form.reportValidity();
+  showToast(duplicate.toast, "warning");
+  return false;
+}
+
 function setSelectValue(select, value) {
   const cleanValue = value || "";
   if (
@@ -723,6 +769,7 @@ function setSaveButtonMode(isEditing = false) {
 }
 
 function resetForm() {
+  clearMotherCinValidity();
   elements.form.reset();
   elements.recordId.value = "";
   elements.childrenBody.innerHTML = "";
@@ -1311,6 +1358,7 @@ function calculateAgeFromBirthDate(value) {
 }
 
 function fillForm(record) {
+  clearMotherCinValidity();
   elements.recordId.value = record.id;
   elements.motherName.value = record.motherName;
   elements.motherCin.value = record.motherCin || "";
@@ -1331,14 +1379,19 @@ function fillForm(record) {
 }
 
 async function handleSave({ startNew = false } = {}) {
+  clearMotherCinValidity();
   if (!elements.form.reportValidity()) return null;
 
   const record = getFormRecord();
   if (!validateChildren(record.children)) return null;
+  if (!validateUniqueMotherCin(record)) return null;
 
   const mysqlResult = await syncRecordsToMySql([record], { silent: true });
   if (!mysqlResult) {
-    showToast("تعذر الحفظ في MySQL. لم يتم حفظ السجل.", "danger");
+    showToast(
+      state.lastSyncError?.message || "تعذر الحفظ في MySQL. لم يتم حفظ السجل.",
+      "danger",
+    );
     return null;
   }
 
@@ -1360,6 +1413,8 @@ async function syncRecordsToMySql(
   records = state.records,
   { silent = false } = {},
 ) {
+  state.lastSyncError = null;
+
   if (!records.length) {
     if (!silent) showToast("لا توجد بيانات لإرسالها إلى MySQL.", "warning");
     return false;
@@ -1403,6 +1458,7 @@ async function syncRecordsToMySql(
     throw lastError || new Error("MySQL sync failed.");
   } catch (error) {
     console.warn(error);
+    state.lastSyncError = error;
     if (!silent) {
       showToast(`تعذر الحفظ في MySQL: ${error.message}`, "danger");
     }
@@ -1847,6 +1903,7 @@ function bindEvents() {
     copyGeneratedPassword,
   );
   elements.accountsList?.addEventListener("click", handleAccountAction);
+  elements.motherCin.addEventListener("input", clearMotherCinValidity);
 
   elements.addChildBtn.addEventListener("click", () =>
     addChildRow(getRepeatedChildDefaults()),
