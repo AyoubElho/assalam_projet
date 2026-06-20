@@ -1327,6 +1327,10 @@ function renderRecords() {
         ${motherDetails ? `<p class="record-meta mb-0 mt-2">${motherDetails}</p>` : ""}
         <p class="record-meta mb-0 mt-2">${childrenNames || "بدون أبناء"}</p>
         <div class="record-actions">
+          <button class="btn btn-outline-secondary btn-sm record-pdf-btn" type="button" data-action="pdf" title="إنشاء PDF لهذه الأسرة">
+            <i class="bi bi-file-earmark-pdf"></i>
+            PDF
+          </button>
           <button class="btn btn-outline-primary btn-sm" type="button" data-action="edit">
             <i class="bi bi-pencil-square"></i>
             تعديل
@@ -1566,21 +1570,17 @@ async function deleteRecordFromMySql(id, { silent = false } = {}) {
 }
 
 async function generatePdf(record) {
-  if (!record || !record.children.length) {
+  if (!record) {
     showToast("لا توجد بيانات جاهزة لإنشاء PDF.", "warning");
     return;
   }
 
   await generatePdfFromHtml([record], {
-    title: "جدول الأسرة",
+    title: "بيان الأسرة والأبناء",
     fileName: `family-${safeFileName(record.motherName)}.pdf`,
-    meta: [
-      `اسم الأم: ${record.motherName}`,
-      record.motherCin ? `رقم البطاقة الوطنية: ${record.motherCin}` : "",
-      record.motherPhone ? `الهاتف: ${record.motherPhone}` : "",
-      record.motherAddress ? `العنوان: ${record.motherAddress}` : "",
-      record.familyCode ? `رقم السجل: ${record.familyCode}` : "",
-    ].filter(Boolean),
+    meta: [`اسم الأم: ${record.motherName || "-"}`],
+    singleEntry: true,
+    singleEntryName: record.motherName || "-",
   });
 }
 
@@ -1595,6 +1595,12 @@ async function generateAllRecordsPdf(records) {
     (total, record) => total + record.children.length,
     0,
   );
+
+  if (orderedRecords.length === 1) {
+    await generatePdf(orderedRecords[0]);
+    return;
+  }
+
   await generatePdfFromHtml(orderedRecords, {
     title: "لائحة أطفال المؤسسة 2025-2026 موسم",
     fileName: "all-family-records.pdf",
@@ -1614,6 +1620,15 @@ async function generatePdfFromHtml(records, options = {}) {
   }
 
   const pagesContainer = buildPdfPages(records, options);
+  await savePdfPages(pagesContainer, options.fileName || "family-records.pdf");
+}
+
+async function savePdfPages(pagesContainer, fileName) {
+  if (!window.html2canvas || !window.jspdf?.jsPDF) {
+    showToast("تعذر تحميل مكتبة PDF. أعد تحميل الصفحة ثم حاول مجددا.", "danger");
+    return;
+  }
+
   document.body.appendChild(pagesContainer);
 
   try {
@@ -1636,7 +1651,7 @@ async function generatePdfFromHtml(records, options = {}) {
       pdf.addImage(imageData, "PNG", 0, 0, pageWidth, pageHeight);
     }
 
-    pdf.save(options.fileName || "family-records.pdf");
+    pdf.save(fileName);
   } finally {
     pagesContainer.remove();
   }
@@ -1720,17 +1735,30 @@ function sheetFitsPage(sheet) {
 function buildPdfSheet(rows, options = {}, pageNumber = 1, totalPages = 1) {
   const recordsCount = new Set(rows.map((row) => row.record.id)).size;
   const meta = options.meta || [`عدد الأسر: ${recordsCount}`];
+  const title = escapeHtml(options.title || "جدول الأسر");
+  const headerContent = options.singleEntry
+    ? `
+      <p class="pdf-single-entry-kicker">سجل معلومات الأسرة</p>
+      <h2>${title}</h2>
+      <div class="pdf-single-entry-name">
+        <span>اسم الأم</span>
+        <strong>${escapeHtml(options.singleEntryName || "-")}</strong>
+      </div>
+    `
+    : `
+      <h2>${title}</h2>
+      <div class="pdf-meta">
+        ${meta.map((item) => `<strong>${escapeHtml(item)}</strong>`).join("")}
+        <strong>صفحة ${pageNumber} / ${totalPages}</strong>
+      </div>
+    `;
   const sheet = document.createElement("section");
-  sheet.className = "pdf-capture-sheet";
+  sheet.className = `pdf-capture-sheet${options.singleEntry ? " pdf-single-entry-sheet" : ""}`;
   sheet.innerHTML = `
     <div class="pdf-sheet-header">
       <img class="pdf-logo" src="logo.png" alt="">
       <div class="pdf-title-block">
-        <h2>${escapeHtml(options.title || "جدول الأسر")}</h2>
-        <div class="pdf-meta">
-          ${meta.map((item) => `<strong>${escapeHtml(item)}</strong>`).join("")}
-          <strong>صفحة ${pageNumber} / ${totalPages}</strong>
-        </div>
+        ${headerContent}
       </div>
       <div class="pdf-logo-spacer"></div>
     </div>
@@ -1753,6 +1781,14 @@ function buildPdfSheet(rows, options = {}, pageNumber = 1, totalPages = 1) {
         ${buildPageRows(rows)}
       </tbody>
     </table>
+    ${
+      options.singleEntry
+        ? `<footer class="pdf-single-entry-footer">
+            <span>سجل معلومات الأسرة</span>
+            <span>تاريخ الاستخراج: ${escapeHtml(formatDate(new Date().toISOString()))}</span>
+          </footer>`
+        : ""
+    }
   `;
   return sheet;
 }
@@ -2098,6 +2134,11 @@ function bindEvents() {
     if (!record) return;
 
     const action = button.dataset.action;
+    if (action === "pdf") {
+      await generatePdf(record);
+      return;
+    }
+
     if (action === "edit") {
       fillForm(record);
     }
