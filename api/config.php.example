@@ -1,0 +1,21 @@
+<?php
+declare(strict_types=1);
+
+// Database configuration
+const DB_HOST = '127.0.0.1';
+const DB_NAME = 'certificat_db';
+const DB_USER = 'root';
+const DB_PASS = 'YOUR_DB_PASSWORD_HERE';
+const DB_CHARSET = 'utf8mb4';
+
+// Application default users
+const APP_USERS = [
+    'admin' => [
+        'password_hash' => 'YOUR_ADMIN_PASSWORD_HASH_HERE', // e.g. bcrypt hash of admin password
+        'role' => 'admin',
+    ],
+    'writer' => [
+        'password_hash' => 'YOUR_WRITER_PASSWORD_HASH_HERE', // e.g. bcrypt hash of writer password
+        'role' => 'writer',
+    ],
+];

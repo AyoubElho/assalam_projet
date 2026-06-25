@@ -1,0 +1,26 @@
+# Configuration files (contains credentials)
+/api/config.php
+
+# Dynamic runtime JSON files (contains users, passwords, display settings)
+/api/users.json
+/api/profiles.json
+
+# Local PHP session files
+/api/sessions/sess_*
+
+# Uploaded files (keeps folder structure but ignores user uploads)
+/api/uploads/profiles/*
+!/api/uploads/profiles/.gitignore
+
+# IDE configurations
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS generated files
+.DS_Store
+Thumbs.db
